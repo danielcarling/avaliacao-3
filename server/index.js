@@ -3,15 +3,15 @@ const mysql = require("mysql");
 const cors = require("cors");
 
 const app = express();
-const port = 3000;
+const port = 5000;
 
 app.use(cors());
 app.use(express.json());
 
 const db = mysql.createConnection({
   host: "localhost",
-  user: "root",
-  password: "password",
+  user: "daniel",
+  password: "123456",
   database: "mydatabase",
 });
 
@@ -33,7 +33,7 @@ app.post("/items", (req, res) => {
   const newItem = { name: req.body.name };
   db.query(sql, newItem, (err, result) => {
     if (err) throw err;
-    res.send(result);
+    res.send({ id: result.insertId, ...newItem });
   });
 });
 
