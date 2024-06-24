@@ -1,12 +1,13 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const mysql = require("mysql");
 const cors = require("cors");
 
 const app = express();
-const port = 5000;
+const port = 5008;
 
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
 const db = mysql.createConnection({
   host: "localhost",
@@ -16,44 +17,69 @@ const db = mysql.createConnection({
 });
 
 db.connect((err) => {
-  if (err) throw err;
-  console.log("Database connected!");
+  if (err) {
+    console.error("Erro ao conectar ao banco de dados:", err);
+    return;
+  }
+  console.log("Conectado ao banco de dados MySQL");
 });
 
-app.get("/items", (req, res) => {
-  const sql = "SELECT * FROM items";
-  db.query(sql, (err, results) => {
-    if (err) throw err;
-    res.send(results);
+app.get("/tasks", (req, res) => {
+  db.query("SELECT * FROM tasks", (err, results) => {
+    if (err) {
+      console.error("Erro ao buscar tasks:", err);
+      res.status(500).send("Erro ao buscar tasks");
+      return;
+    }
+    res.json(results);
   });
 });
 
-app.post("/items", (req, res) => {
-  const sql = "INSERT INTO items SET ?";
-  const newItem = { name: req.body.name };
-  db.query(sql, newItem, (err, result) => {
-    if (err) throw err;
-    res.send({ id: result.insertId, ...newItem });
-  });
+app.post("/tasks", (req, res) => {
+  const { user_id, task } = req.body;
+  db.query(
+    "INSERT INTO tasks (user_id, task) VALUES (?, ?)",
+    [user_id, task],
+    (err, results) => {
+      if (err) {
+        console.error("Erro ao criar task:", err);
+        res.status(500).send("Erro ao criar task");
+        return;
+      }
+      res.json({ id: results.insertId, user_id, task });
+    }
+  );
 });
 
-app.put("/items/:id", (req, res) => {
-  const sql = "UPDATE items SET ? WHERE id = ?";
-  const updatedItem = { name: req.body.name };
-  db.query(sql, [updatedItem, req.params.id], (err, result) => {
-    if (err) throw err;
-    res.send(result);
-  });
+app.put("/tasks/:id", (req, res) => {
+  const { id } = req.params;
+  const { user_id, task } = req.body;
+  db.query(
+    "UPDATE tasks SET user_id = ?, task = ? WHERE id = ?",
+    [user_id, task, id],
+    (err) => {
+      if (err) {
+        console.error("Erro ao atualizar task:", err);
+        res.status(500).send("Erro ao atualizar task");
+        return;
+      }
+      res.sendStatus(200);
+    }
+  );
 });
 
-app.delete("/items/:id", (req, res) => {
-  const sql = "DELETE FROM items WHERE id = ?";
-  db.query(sql, req.params.id, (err, result) => {
-    if (err) throw err;
-    res.send(result);
+app.delete("/tasks/:id", (req, res) => {
+  const { id } = req.params;
+  db.query("DELETE FROM tasks WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.error("Erro ao deletar task:", err);
+      res.status(500).send("Erro ao deletar task");
+      return;
+    }
+    res.sendStatus(200);
   });
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Servidor rodando em http://localhost:${port}`);
 });
