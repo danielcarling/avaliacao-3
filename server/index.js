@@ -36,27 +36,27 @@ app.get("/tasks", (req, res) => {
 });
 
 app.post("/tasks", (req, res) => {
-  const { user_id, task } = req.body;
+  const { user_id, username, task } = req.body;
   db.query(
-    "INSERT INTO tasks (user_id, task) VALUES (?, ?)",
-    [user_id, task],
+    "INSERT INTO tasks (user_id, username, task) VALUES (?, ?, ?)",
+    [user_id, username, task],
     (err, results) => {
       if (err) {
         console.error("Erro ao criar task:", err);
         res.status(500).send("Erro ao criar task");
         return;
       }
-      res.json({ id: results.insertId, user_id, task });
+      res.json({ id: results.insertId, user_id, username, task });
     }
   );
 });
 
 app.put("/tasks/:id", (req, res) => {
   const { id } = req.params;
-  const { user_id, task } = req.body;
+  const { user_id, username, task } = req.body;
   db.query(
-    "UPDATE tasks SET user_id = ?, task = ? WHERE id = ?",
-    [user_id, task, id],
+    "UPDATE tasks SET user_id = ?, username=?, task = ? WHERE id = ?",
+    [user_id, username, task, id],
     (err) => {
       if (err) {
         console.error("Erro ao atualizar task:", err);

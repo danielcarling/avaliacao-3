@@ -1,63 +1,57 @@
 <template>
   <v-container>
-    <v-data-table :headers="headers" :items="tasks" class="elevation-1">
-      <template v-slot:top>
-        <v-toolbar flat>
-          <v-toolbar-title>Tarefas</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" dark class="mb-2" @click="openDialog">
-            Adicionar Item
-          </v-btn>
-        </v-toolbar>
-      </template>
-      <template v-slot:item.actions="{ item }">
-        <v-icon small @click="editTask(item)">
-          mdi-pencil
-        </v-icon>
-        <v-icon small @click="deleteTask(item)">
-          mdi-delete
-        </v-icon>
-      </template>
-    </v-data-table>
-
-    <v-dialog v-model="dialog" max-width="500px">
-      <v-card>
-        <v-card-title>
-          <span class="headline">{{ formTitle }}</span>
-        </v-card-title>
+    <v-btn @click="openDialog">Adicionar Item</v-btn>
+  </v-container>
+  <v-container>
+    <div v-for="task in tasks" :key="task.id" class="card-container">
+      <v-card v-if="task.user_id === userStore.user.uid">
+        <v-card-title>{{ task.username }}</v-card-title>
         <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-text-field v-model="editedTask.task"
-                  label="Tarefa"></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
+          {{ task.task }}
         </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="close">Cancelar</v-btn>
-          <v-btn color="blue darken-1" text @click="save">Salvar</v-btn>
+          <v-btn @click="editTask(task)">Editar</v-btn>
+          <v-btn @click="deleteTask(task)">Excluir</v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </div>
   </v-container>
+
+  <v-dialog v-model="dialog" max-width="500px">
+    <v-card>
+      <v-card-title>
+        <span class="headline">{{ formTitle }}</span>
+      </v-card-title>
+      <v-card-text>
+        <v-container>
+          <v-row>
+            <v-col cols="12">
+              <v-text-field v-model="editedTask.task"
+                label="Tarefa"></v-text-field>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="blue darken-1" text @click="close">Cancelar</v-btn>
+        <v-btn color="blue darken-1" text @click="save">Salvar</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, reactive, nextTick } from 'vue';
+import { useUserStore } from '@/stores/user';
 
 const dialog = ref(false);
-const headers = [
-  { text: 'Task', align: 'start', sortable: false, value: 'task' },
-  { text: 'Actions', value: 'actions', sortable: false }
-];
 const tasks = ref([]);
 const editedIndex = ref(-1);
-const defaultTask = { id: null, user_id: '', task: '' };
+const defaultTask = { id: null, user_id: '', username: '', task: '' };
 const editedTask = reactive({ ...defaultTask });
+
+const userStore = useUserStore();
 
 const formTitle = computed(() => (editedIndex.value === -1 ? 'Novo item' : 'Editar item'));
 
@@ -120,6 +114,10 @@ const save = async () => {
     }
   } else {
     try {
+      // Preencher os campos adicionais
+      editedTask.user_id = userStore.user.uid;
+      editedTask.username = userStore.user.displayName;
+
       const response = await fetch('http://localhost:5008/tasks', {
         method: 'POST',
         headers: {
@@ -128,7 +126,6 @@ const save = async () => {
         body: JSON.stringify(editedTask)
       });
       const newTask = await response.json();
-      console.log('newTask:', newTask);
       tasks.value.push(newTask);
     } catch (error) {
       console.error('Erro ao criar item:', error);
@@ -139,3 +136,10 @@ const save = async () => {
 
 onMounted(fetchTasks);
 </script>
+
+<style scoped>
+.card-container+.card-container {
+  margin-bottom: 20px;
+
+}
+</style>
