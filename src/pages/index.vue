@@ -1,8 +1,10 @@
 <template>
   <v-container>
-    <v-btn @click="openDialog">Adicionar Item</v-btn>
+    <v-btn @click="openDialog" :disabled="!userStore.isAuthenticated">
+      Adicionar Tarefa
+    </v-btn>
   </v-container>
-  <v-container>
+  <v-container v-if="userStore.isAuthenticated">
     <div v-for="task in tasks" :key="task.id" class="card-container">
       <v-card v-if="task.user_id === userStore.user.uid">
         <v-card-title>{{ task.username }}</v-card-title>
@@ -10,11 +12,14 @@
           {{ task.task }}
         </v-card-text>
         <v-card-actions>
-          <v-btn @click="editTask(task)">Editar</v-btn>
-          <v-btn @click="deleteTask(task)">Excluir</v-btn>
+          <v-btn @click="editTask(task)" color="blue">Editar</v-btn>
+          <v-btn @click="deleteTask(task)" color="red">Excluir</v-btn>
         </v-card-actions>
       </v-card>
     </div>
+  </v-container>
+  <v-container v-else>
+    <v-alert type="info">Faça login para ver as tarefas</v-alert>
   </v-container>
 
   <v-dialog v-model="dialog" max-width="500px">
